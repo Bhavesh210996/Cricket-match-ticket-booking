@@ -1,10 +1,8 @@
 // Full-bleed overlay above the <Canvas>. Nothing here holds app state — every
 // child reads/dispatches through useBookingStore (or the camera bridge for the
 // camera-only presets) and self-gates on `mode`.
-import TopBar from './TopBar.jsx';
-import TierChips from './TierChips.jsx';
-import CameraPresetBar from './CameraPresetBar.jsx';
-import TierPanel from './TierPanel.jsx';
+import OverviewTopStack from './OverviewTopStack.jsx';
+// import TierPanel from './TierPanel.jsx'; // "Choose your tier" card — hidden for now (component kept, just not rendered)
 import StandHeader from './StandHeader.jsx';
 import SeatChip from './SeatChip.jsx';
 import SeatInfoCard from './SeatInfoCard.jsx';
@@ -26,10 +24,8 @@ export default function UiLayer() {
         overflow: 'hidden',
       }}
     >
-      <TopBar />
-      <TierChips />
-      <CameraPresetBar />
-      <TierPanel />
+      <OverviewTopStack />
+      {/* <TierPanel /> — "Choose your tier" card hidden for now */}
       <StandHeader />
       <SeatChip />
       <SeatInfoCard />

@@ -11,6 +11,11 @@
       rel="stylesheet"
     />
     <title>cricket-stadium-booking</title>
+    <style>
+      /* Paint the dark theme colour before any CSS/JS loads, so a hard reload
+         never flashes the browser's default white page behind the WebGL canvas. */
+      html, body, #root { margin: 0; height: 100%; background: #05070c; }
+    </style>
   </head>
   <body>
     <div id="root"></div>

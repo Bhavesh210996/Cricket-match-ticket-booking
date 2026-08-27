@@ -7,6 +7,11 @@ export const BODY = "'Barlow', system-ui, sans-serif";
 export const ACCENT = '#d7ff3e';
 export const COMPARE = '#2ee6ff'; // "in compare" seat state (see config.js COMPARE)
 
+// App-wide dark backdrop, painted before the 3D scene renders (index.html inline
+// <style>, index.css, the <Canvas> element, the WebGL clear colour and the
+// SceneLoader overlay all use this) so there's never a white flash on load.
+export const APP_BG = '#05070c';
+
 export const PANEL_BASE = {
   background: 'rgba(10,15,24,.93)',
   border: '1px solid rgba(255,255,255,.09)',

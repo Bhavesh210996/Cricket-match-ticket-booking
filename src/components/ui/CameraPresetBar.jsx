@@ -14,6 +14,7 @@ const PRESETS = [
 ];
 
 const presetBtn = {
+  flexShrink: 0,
   padding: '5px 9px',
   borderRadius: 8,
   fontWeight: 600,
@@ -42,20 +43,21 @@ export default function CameraPresetBar() {
 
   return (
     <div
+      className="hscroll"
       style={{
-        position: 'absolute',
-        top: 134,
-        left: 16,
-        right: 16,
+        // flows under <TierChips> inside <OverviewTopStack> (was position:
+        // absolute top:134, which collided once the chips wrapped on phones).
+        // Scrolls horizontally on narrow screens instead of overflowing.
+        padding: '8px 16px 0',
         display: 'flex',
         gap: 6,
-        flexWrap: 'wrap',
         alignItems: 'center',
         pointerEvents: 'auto',
       }}
     >
       <span
         style={{
+          flexShrink: 0,
           fontFamily: COND,
           fontSize: 11,
           letterSpacing: '.18em',

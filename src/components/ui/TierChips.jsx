@@ -14,14 +14,14 @@ export default function TierChips() {
 
   return (
     <div
+      className="hscroll"
       style={{
-        position: 'absolute',
-        top: 96,
-        left: 16,
-        right: 16,
+        // flows under <TopBar> inside <OverviewTopStack> (was position:absolute
+        // top:96, which overlapped the wrapped title on phones). Scrolls
+        // horizontally on narrow screens instead of wrapping/overflowing.
+        padding: '2px 16px 0',
         display: 'flex',
         gap: 6,
-        flexWrap: 'wrap',
         alignItems: 'center',
         pointerEvents: 'auto',
       }}
@@ -36,6 +36,7 @@ export default function TierChips() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
+              flexShrink: 0,
               padding: '6px 10px',
               borderRadius: 9,
               cursor: 'pointer',

@@ -18,24 +18,24 @@ export default function TopBar() {
   return (
     <div
       style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        padding: '14px 16px 30px',
+        // flows inside <OverviewTopStack>; the gradient still lives here so the
+        // fade sits behind the fixture header only, as on desktop
+        position: 'relative',
+        padding: '14px 16px 16px',
         background:
-          'linear-gradient(180deg, rgba(5,8,14,.94) 0%, rgba(5,8,14,.72) 55%, rgba(5,8,14,0) 100%)',
+          'linear-gradient(180deg, rgba(5,8,14,.94) 0%, rgba(5,8,14,.72) 60%, rgba(5,8,14,0) 100%)',
         pointerEvents: 'none',
         display: 'flex',
         alignItems: 'flex-start',
         gap: 12,
       }}
     >
-      <button style={iconBtn} onClick={backToOverview} aria-label="Close">
+      <button style={{ ...iconBtn, flexShrink: 0 }} onClick={backToOverview} aria-label="Close">
         ×
       </button>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
+      {/* pill is taken out of flow so it can't squeeze the title on a phone */}
+      <div style={{ flex: 1, minWidth: 0, paddingRight: 96 }}>
         <div
           style={{
             fontFamily: COND,
@@ -51,7 +51,9 @@ export default function TopBar() {
           style={{
             fontFamily: COND,
             fontWeight: 700,
-            fontSize: 24,
+            // 24px on desktop; scales down on narrow phones so it wraps to at
+            // most two lines instead of three
+            fontSize: 'clamp(19px, 5.4vw, 24px)',
             lineHeight: 1.05,
             letterSpacing: '.01em',
           }}
@@ -76,13 +78,16 @@ export default function TopBar() {
 
       <div
         style={{
+          position: 'absolute',
+          top: 14,
+          right: 16,
           pointerEvents: 'auto',
           padding: '7px 11px',
           borderRadius: 10,
           border: '1px solid rgba(215,255,62,.3)',
           background: 'rgba(215,255,62,.1)',
           fontFamily: COND,
-          fontSize: 12,
+          fontSize: 'clamp(10px, 2.9vw, 12px)',
           letterSpacing: '.1em',
           textTransform: 'uppercase',
           color: ACCENT,

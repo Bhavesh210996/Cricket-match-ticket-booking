@@ -1,6 +1,11 @@
-// POV-mode seat detail: "your view from" bar + bottom card with label, price,
-// distance/eye-height, quality badge, Try another seat / Book this seat, and
-// add-to-compare. Reference: isPov top bar + povCardStyle card.
+// POV-mode seat detail. Two pieces:
+//   1. a thin "your view from" bar at the top (back button + drag hint)
+//   2. a bottom panel with a slim always-visible bar — seat label,
+//      tier/distance/eye-height, price, quality badge — plus a chevron at the
+//      top that collapses/expands the description, sun-exposure timeline and
+//      action buttons. Opens EXPANDED (and re-expands on every new seat); the
+//      user can collapse it down to the slim bar to clear the horizon view.
+import { useState } from 'react';
 import { useBookingStore } from '../../store/useBookingStore.js';
 import { primeReplayAudio } from '../../stadium/replaySound.js';
 import { captureSeatPov } from '../../stadium/snapshot.js';
@@ -23,6 +28,21 @@ const MATCH_START = parseMatchStart(MATCH.date);
 
 const EYE_HEIGHT_M = 1.18; // constant from the reference design
 
+const secondaryBtn = {
+  width: '100%',
+  padding: 11,
+  borderRadius: 12,
+  border: '1px solid rgba(255,255,255,.16)',
+  background: 'rgba(255,255,255,.04)',
+  color: '#eaf0f8',
+  fontFamily: COND,
+  fontWeight: 600,
+  fontSize: 13.5,
+  letterSpacing: '.1em',
+  textTransform: 'uppercase',
+  cursor: 'pointer',
+};
+
 export default function SeatInfoCard() {
   const mode = useBookingStore((s) => s.mode);
   const seat = useBookingStore((s) => s.selectedSeat);
@@ -34,11 +54,22 @@ export default function SeatInfoCard() {
   const startReplay = useBookingStore((s) => s.startReplay);
   const replaying = useBookingStore((s) => s.replaying);
 
+  const [expanded, setExpanded] = useState(true);
+
+  // open expanded; re-expand whenever the selected seat changes (render-phase
+  // reset on a changed key — no effect, no cascading render)
+  const [lastKey, setLastKey] = useState(seat?.key);
+  if (seat?.key !== lastKey) {
+    setLastKey(seat?.key);
+    setExpanded(true);
+  }
+
   if (mode !== 'pov' || !seat) return null;
 
   const short = `${seat.block} · Row ${seat.rowLabel} · Seat ${seat.num}`;
   const q = qualityStyle(seat.quality);
   const inList = compareList.some((c) => c.key === seat.key);
+  const note = seatNote(seat);
 
   // Automatic per-seat sun-exposure timeline. Pure background calc from the
   // simplified sun formula — no time state, decoupled from the scene lighting.
@@ -67,6 +98,8 @@ export default function SeatInfoCard() {
     console.log('[book]', short, money(seat.price));
     window.alert(`Booking ${short}\n${money(seat.price)} incl. fees`);
   };
+
+  const toggle = () => setExpanded((v) => !v);
 
   return (
     <>
@@ -131,7 +164,7 @@ export default function SeatInfoCard() {
         </span>
       </div>
 
-      {/* detail card */}
+      {/* bottom panel — collapsed slim bar by default, expands upward on tap */}
       <div
         style={{
           position: 'absolute',
@@ -139,7 +172,7 @@ export default function SeatInfoCard() {
           bottom: 24,
           width: 430,
           maxWidth: 'calc(100vw - 48px)',
-          padding: 18,
+          padding: 16,
           borderRadius: 20,
           pointerEvents: 'auto',
           color: '#eaf0f8',
@@ -147,227 +180,283 @@ export default function SeatInfoCard() {
           ...PANEL_BASE,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div
+        {/* the always-visible slim bar — the whole thing toggles expand */}
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Collapse seat details' : 'Expand seat details'}
+          onClick={toggle}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggle();
+            }
+          }}
+          style={{ cursor: 'pointer', outline: 'none' }}
+        >
+          {/* chevron control — top-centre, clearly visible; whole bar toggles */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+            <span
+              aria-hidden
               style={{
-                fontFamily: COND,
-                fontWeight: 700,
-                fontSize: 20,
-                letterSpacing: '.04em',
-                textTransform: 'uppercase',
-                lineHeight: 1,
-              }}
-            >
-              {short}
-            </div>
-            <div style={{ fontSize: 12, color: '#93a1b6', marginTop: 3 }}>
-              {seat.tierLabel} tier · {seat.distance}m from the pitch centre · eye height{' '}
-              {EYE_HEIGHT_M}m
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                gap: 8,
+                display: 'inline-flex',
                 alignItems: 'center',
-                marginTop: 9,
-                flexWrap: 'wrap',
+                justifyContent: 'center',
+                width: 48,
+                height: 22,
+                borderRadius: 11,
+                background: 'rgba(255,255,255,.1)',
+                border: '1px solid rgba(255,255,255,.16)',
               }}
             >
-              <span
+              <svg
+                width="14"
+                height="9"
+                viewBox="0 0 14 9"
+                fill="none"
                 style={{
-                  padding: '5px 10px',
-                  borderRadius: 8,
-                  fontFamily: COND,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  letterSpacing: '.1em',
-                  textTransform: 'uppercase',
-                  ...q,
+                  display: 'block',
+                  transform: expanded ? 'none' : 'rotate(180deg)',
+                  transition: 'transform .3s ease',
                 }}
               >
-                {seat.quality} view
-              </span>
-              <span style={{ fontSize: 11.5, color: '#8b98ac' }}>{seatNote(seat)}</span>
-            </div>
-
-            {/* automatic per-seat sun-exposure timeline across the match window */}
-            {sunTimeline.length > 0 && (
-              <div style={{ marginTop: 11 }}>
-                <div
+                <path
+                  d="M1 1.5 L7 7.5 L13 1.5"
+                  stroke="#eaf0f8"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontFamily: COND,
+                  fontWeight: 700,
+                  fontSize: 20,
+                  letterSpacing: '.04em',
+                  textTransform: 'uppercase',
+                  lineHeight: 1,
+                }}
+              >
+                {short}
+              </div>
+              <div style={{ fontSize: 12, color: '#93a1b6', marginTop: 3 }}>
+                {seat.tierLabel} tier · {seat.distance}m from the pitch centre · eye height{' '}
+                {EYE_HEIGHT_M}m
+              </div>
+              <div style={{ marginTop: 9 }}>
+                <span
                   style={{
+                    display: 'inline-block',
+                    padding: '5px 10px',
+                    borderRadius: 8,
                     fontFamily: COND,
-                    fontSize: 10,
-                    letterSpacing: '.2em',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: '.1em',
                     textTransform: 'uppercase',
-                    color: '#66738a',
-                    marginBottom: 6,
+                    ...q,
                   }}
                 >
-                  Sun exposure
-                </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                  {sunTimeline.map((b, i) => (
-                    <span
-                      key={i}
-                      title={`${b.label} · ${formatHour(b.start)}–${formatHour(b.end)}`}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 5,
-                        padding: '4px 8px',
-                        borderRadius: 8,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        whiteSpace: 'nowrap',
-                        ...SUN_BAND_TINT[b.category],
-                      }}
-                    >
-                      <span aria-hidden style={{ fontSize: 12 }}>{b.emoji}</span>
-                      {b.label}
-                      <span style={{ opacity: 0.7, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
-                        {formatHour(b.start)}–{formatHour(b.end)}
-                      </span>
-                    </span>
-                  ))}
-                </div>
+                  {seat.quality} view
+                </span>
               </div>
-            )}
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div
-              style={{
-                fontFamily: COND,
-                fontWeight: 700,
-                fontSize: 26,
-                lineHeight: 1,
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {money(seat.price)}
             </div>
-            <div
-              style={{
-                fontSize: 10.5,
-                color: '#7d8ba1',
-                letterSpacing: '.08em',
-                textTransform: 'uppercase',
-              }}
-            >
-              per seat
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div
+                style={{
+                  fontFamily: COND,
+                  fontWeight: 700,
+                  fontSize: 26,
+                  lineHeight: 1,
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {money(seat.price)}
+              </div>
+              <div
+                style={{
+                  fontSize: 10.5,
+                  color: '#7d8ba1',
+                  letterSpacing: '.08em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                per seat
+              </div>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-          <button
-            onClick={deselectSeat}
-            style={{
-              flex: 1,
-              padding: 13,
-              borderRadius: 13,
-              border: '1px solid rgba(255,255,255,.16)',
-              background: 'rgba(255,255,255,.04)',
-              color: '#eaf0f8',
-              fontFamily: COND,
-              fontWeight: 600,
-              fontSize: 14,
-              letterSpacing: '.08em',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-            }}
-          >
-            Try another seat
-          </button>
-          <button
-            onClick={book}
-            style={{
-              flex: 1.25,
-              padding: 13,
-              border: 'none',
-              borderRadius: 13,
-              background: ACCENT,
-              color: '#06080d',
-              fontFamily: COND,
-              fontWeight: 700,
-              fontSize: 15,
-              letterSpacing: '.08em',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-            }}
-          >
-            Book this seat
-          </button>
+        {/* expandable detail — grid 0fr→1fr animates height, card is bottom-
+            anchored so it grows upward from the slim bar */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateRows: expanded ? '1fr' : '0fr',
+            transition: 'grid-template-rows .4s cubic-bezier(.4, 0, .2, 1)',
+          }}
+        >
+          <div style={{ overflow: 'hidden', minHeight: 0 }}>
+            <div
+              style={{
+                opacity: expanded ? 1 : 0,
+                transition: 'opacity .28s ease',
+                paddingTop: 14,
+                marginTop: 14,
+                borderTop: '1px solid rgba(255,255,255,.09)',
+                // safety on short viewports / long sun timelines
+                maxHeight: 'calc(100vh - 150px)',
+                overflowY: 'auto',
+              }}
+            >
+              {note && (
+                <div style={{ fontSize: 12, color: '#8b98ac', lineHeight: 1.45 }}>{note}</div>
+              )}
+
+              {/* automatic per-seat sun-exposure timeline across the match window */}
+              {sunTimeline.length > 0 && (
+                <div style={{ marginTop: note ? 12 : 0 }}>
+                  <div
+                    style={{
+                      fontFamily: COND,
+                      fontSize: 10,
+                      letterSpacing: '.2em',
+                      textTransform: 'uppercase',
+                      color: '#66738a',
+                      marginBottom: 6,
+                    }}
+                  >
+                    Sun exposure
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {sunTimeline.map((b, i) => (
+                      <span
+                        key={i}
+                        title={`${b.label} · ${formatHour(b.start)}–${formatHour(b.end)}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          padding: '4px 8px',
+                          borderRadius: 8,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          whiteSpace: 'nowrap',
+                          ...SUN_BAND_TINT[b.category],
+                        }}
+                      >
+                        <span aria-hidden style={{ fontSize: 12 }}>
+                          {b.emoji}
+                        </span>
+                        {b.label}
+                        <span
+                          style={{ opacity: 0.7, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}
+                        >
+                          {formatHour(b.start)}–{formatHour(b.end)}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <button
+                  onClick={deselectSeat}
+                  style={{
+                    flex: 1,
+                    padding: 13,
+                    borderRadius: 13,
+                    border: '1px solid rgba(255,255,255,.16)',
+                    background: 'rgba(255,255,255,.04)',
+                    color: '#eaf0f8',
+                    fontFamily: COND,
+                    fontWeight: 600,
+                    fontSize: 14,
+                    letterSpacing: '.08em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Try another seat
+                </button>
+                <button
+                  onClick={book}
+                  style={{
+                    flex: 1.25,
+                    padding: 13,
+                    border: 'none',
+                    borderRadius: 13,
+                    background: ACCENT,
+                    color: '#06080d',
+                    fontFamily: COND,
+                    fontWeight: 700,
+                    fontSize: 15,
+                    letterSpacing: '.08em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Book this seat
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  // resume the AudioContext inside the user gesture so the very
+                  // first click makes sound (no second interaction needed)
+                  primeReplayAudio();
+                  startReplay();
+                }}
+                disabled={replaying}
+                style={{
+                  ...secondaryBtn,
+                  marginTop: 10,
+                  border: `1px solid rgba(215,255,62,${replaying ? '.2' : '.35'})`,
+                  background: 'rgba(215,255,62,.08)',
+                  color: ACCENT,
+                  fontWeight: 700,
+                  cursor: replaying ? 'default' : 'pointer',
+                  opacity: replaying ? 0.6 : 1,
+                }}
+              >
+                {replaying ? 'Reliving the moment…' : '▶ Relive the moment'}
+              </button>
+
+              <button onClick={shareSeat} style={{ ...secondaryBtn, marginTop: 8 }}>
+                ⤴ Share this seat
+              </button>
+
+              <button
+                onClick={addAndCompare}
+                style={{
+                  marginTop: 8,
+                  width: '100%',
+                  padding: 9,
+                  border: 'none',
+                  borderRadius: 10,
+                  background: 'transparent',
+                  color: ACCENT,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: '.06em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                }}
+              >
+                {inList
+                  ? `View your shortlist (${compareList.length})`
+                  : `+ Add to compare (${compareList.length})`}
+              </button>
+            </div>
+          </div>
         </div>
-
-        <button
-          onClick={() => {
-            // resume the AudioContext inside the user gesture so the very first
-            // click makes sound (no second interaction needed)
-            primeReplayAudio();
-            startReplay();
-          }}
-          disabled={replaying}
-          style={{
-            marginTop: 10,
-            width: '100%',
-            padding: 11,
-            borderRadius: 12,
-            border: `1px solid rgba(215,255,62,${replaying ? '.2' : '.35'})`,
-            background: 'rgba(215,255,62,.08)',
-            color: ACCENT,
-            fontFamily: COND,
-            fontWeight: 700,
-            fontSize: 13.5,
-            letterSpacing: '.1em',
-            textTransform: 'uppercase',
-            cursor: replaying ? 'default' : 'pointer',
-            opacity: replaying ? 0.6 : 1,
-          }}
-        >
-          {replaying ? 'Reliving the moment…' : '▶ Relive the moment'}
-        </button>
-
-        <button
-          onClick={shareSeat}
-          style={{
-            marginTop: 8,
-            width: '100%',
-            padding: 11,
-            borderRadius: 12,
-            border: '1px solid rgba(255,255,255,.16)',
-            background: 'rgba(255,255,255,.04)',
-            color: '#eaf0f8',
-            fontFamily: COND,
-            fontWeight: 600,
-            fontSize: 13.5,
-            letterSpacing: '.1em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-          }}
-        >
-          ⤴ Share this seat
-        </button>
-
-        <button
-          onClick={addAndCompare}
-          style={{
-            marginTop: 8,
-            width: '100%',
-            padding: 9,
-            border: 'none',
-            borderRadius: 10,
-            background: 'transparent',
-            color: ACCENT,
-            fontSize: 12,
-            fontWeight: 600,
-            letterSpacing: '.06em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-          }}
-        >
-          {inList ? `View your shortlist (${compareList.length})` : `+ Add to compare (${compareList.length})`}
-        </button>
       </div>
     </>
   );
