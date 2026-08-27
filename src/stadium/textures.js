@@ -4,16 +4,17 @@
 
 import * as THREE from 'three';
 
-export function skyTexture() {
+// `stops` is an optional array of [offset, '#hex'] pairs (top → bottom). The
+// default is the original night gradient; src/stadium/sun.js passes a
+// time-of-day blend so the dome shifts warm at sunset / neutral at midday.
+export function skyTexture(stops) {
   const c = document.createElement('canvas');
   c.width = 8; c.height = 256;
-  const g = c.getContext('2d').createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, '#080b12');
-  g.addColorStop(0.42, '#131a26');
-  g.addColorStop(0.72, '#2b2b30');
-  g.addColorStop(0.88, '#4a3c31');
-  g.addColorStop(1, '#6b503a');
   const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  (stops || [
+    [0, '#080b12'], [0.42, '#131a26'], [0.72, '#2b2b30'], [0.88, '#4a3c31'], [1, '#6b503a'],
+  ]).forEach(([o, col]) => g.addColorStop(o, col));
   ctx.fillStyle = g; ctx.fillRect(0, 0, 8, 256);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -58,6 +59,22 @@ export function glowTexture() {
   g.addColorStop(0.18, 'rgba(255,246,205,0.55)');
   g.addColorStop(1, 'rgba(255,240,190,0)');
   ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+
+// Soft length-wise softener for the fake roof-edge light shafts (RoofLighting).
+// The hard source→tip falloff is baked into the cone as a vertex-alpha
+// gradient; this texture just adds a gentle extra taper on top. Mapped down a
+// cylinder: v=1 (top / roof end) samples the bright stop.
+export function beamTexture() {
+  const c = document.createElement('canvas');
+  c.width = 8; c.height = 256;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, 'rgba(255,247,224,0.90)');
+  g.addColorStop(0.5, 'rgba(255,240,201,0.50)');
+  g.addColorStop(1, 'rgba(255,236,186,0.16)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 8, 256);
   return new THREE.CanvasTexture(c);
 }
 

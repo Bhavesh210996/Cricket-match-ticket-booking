@@ -6,6 +6,7 @@ import Environment from './parts/Environment.jsx';
 import Pitch from './parts/Pitch.jsx';
 import Stands from './parts/Stands.jsx';
 import Roof from './parts/Roof.jsx';
+import RoofLighting from './parts/RoofLighting.jsx';
 import Crowd from './parts/Crowd.jsx';
 import StandSeats from './parts/StandSeats.jsx';
 import CameraRig from './parts/CameraRig.jsx';
@@ -16,14 +17,13 @@ import SnapshotRig from './parts/SnapshotRig.jsx';
 export default function StadiumScene() {
   return (
     <>
-      <color attach="background" args={['#05070c']} />
-      <fogExp2 attach="fog" args={['#15100c', 0.0006]} />
-
+      {/* background + fog now live in <Environment />, driven by match time-of-day */}
       <Lights />
       <Environment />
       <Pitch />
       <Stands />
       <Roof />
+      <RoofLighting />
       <Crowd />
       <StandSeats />
 

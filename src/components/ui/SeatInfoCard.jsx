@@ -4,8 +4,22 @@
 import { useBookingStore } from '../../store/useBookingStore.js';
 import { primeReplayAudio } from '../../stadium/replaySound.js';
 import { captureSeatPov } from '../../stadium/snapshot.js';
+import { seatSunTimeline, parseMatchStart, formatHour } from '../../stadium/sun.js';
 import { shareSeatCard } from './shareCard.js';
+import { MATCH } from './mockData.js';
 import { COND, ACCENT, PANEL_BASE, money, qualityStyle, seatNote, iconBtn } from './tokens.js';
+
+// per-band tint for the sun-exposure summary
+const SUN_BAND_TINT = {
+  glare: { background: 'rgba(224,110,60,.2)', color: '#f0a35f' },
+  direct: { background: 'rgba(245,176,42,.16)', color: '#f5b02a' },
+  partial: { background: 'rgba(150,170,200,.14)', color: '#b7c6dd' },
+  shaded: { background: 'rgba(120,160,200,.14)', color: '#a8c4de' },
+  night: { background: 'rgba(215,255,62,.12)', color: ACCENT },
+};
+
+// resolved once — the mock fixture's scheduled start trims the sample window
+const MATCH_START = parseMatchStart(MATCH.date);
 
 const EYE_HEIGHT_M = 1.18; // constant from the reference design
 
@@ -25,6 +39,11 @@ export default function SeatInfoCard() {
   const short = `${seat.block} · Row ${seat.rowLabel} · Seat ${seat.num}`;
   const q = qualityStyle(seat.quality);
   const inList = compareList.some((c) => c.key === seat.key);
+
+  // Automatic per-seat sun-exposure timeline. Pure background calc from the
+  // simplified sun formula — no time state, decoupled from the scene lighting.
+  const sunStand = stands.find((x) => x.id === seat.standId);
+  const sunTimeline = seatSunTimeline(seat, sunStand, { startHour: MATCH_START });
 
   // add this seat (snapshotting its POV) then open the compare screen
   const addAndCompare = () => {
@@ -171,6 +190,49 @@ export default function SeatInfoCard() {
               </span>
               <span style={{ fontSize: 11.5, color: '#8b98ac' }}>{seatNote(seat)}</span>
             </div>
+
+            {/* automatic per-seat sun-exposure timeline across the match window */}
+            {sunTimeline.length > 0 && (
+              <div style={{ marginTop: 11 }}>
+                <div
+                  style={{
+                    fontFamily: COND,
+                    fontSize: 10,
+                    letterSpacing: '.2em',
+                    textTransform: 'uppercase',
+                    color: '#66738a',
+                    marginBottom: 6,
+                  }}
+                >
+                  Sun exposure
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {sunTimeline.map((b, i) => (
+                    <span
+                      key={i}
+                      title={`${b.label} · ${formatHour(b.start)}–${formatHour(b.end)}`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        padding: '4px 8px',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                        ...SUN_BAND_TINT[b.category],
+                      }}
+                    >
+                      <span aria-hidden style={{ fontSize: 12 }}>{b.emoji}</span>
+                      {b.label}
+                      <span style={{ opacity: 0.7, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
+                        {formatHour(b.start)}–{formatHour(b.end)}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <div style={{ textAlign: 'right' }}>
             <div
