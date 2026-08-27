@@ -1,0 +1,33 @@
+// R3F rebuild of the <stadium-view> web component's scene graph.
+// Geometry/data come from the ported pure functions in src/stadium/*; camera
+// and screen flow come from the Zustand store (see src/store/useBookingStore).
+import Lights from './parts/Lights.jsx';
+import Environment from './parts/Environment.jsx';
+import Pitch from './parts/Pitch.jsx';
+import Stands from './parts/Stands.jsx';
+import Roof from './parts/Roof.jsx';
+import Crowd from './parts/Crowd.jsx';
+import StandSeats from './parts/StandSeats.jsx';
+import CameraRig from './parts/CameraRig.jsx';
+import PovController from './parts/PovController.jsx';
+
+export default function StadiumScene() {
+  return (
+    <>
+      <color attach="background" args={['#05070c']} />
+      <fogExp2 attach="fog" args={['#15100c', 0.0006]} />
+
+      <Lights />
+      <Environment />
+      <Pitch />
+      <Stands />
+      <Roof />
+      <Crowd />
+      <StandSeats />
+
+      <CameraRig />
+      {/* after CameraRig: overrides the (disabled) controls for seat look-around */}
+      <PovController />
+    </>
+  );
+}
