@@ -9,6 +9,9 @@ import gsap from 'gsap';
 let _controls = null;
 let _camera = null;
 
+const _sph = new THREE.Spherical();
+const TWO_PI = Math.PI * 2;
+
 export function registerCamera(controls, camera) {
   _controls = controls;
   _camera = camera;
@@ -39,6 +42,22 @@ export function flyTo(pose, animate = true) {
   if (!hasCamera()) return;
   const { position: p, target: t, fov } = pose;
   _controls.setLookAt(p.x, p.y, p.z, t.x, t.y, t.z, animate);
+
+  // Shortest-path azimuth. setLookAt derives the end azimuth from
+  // atan2(position - target), so it always lands in (-π, π]; but
+  // _controls.azimuthAngle is a free-running accumulator that may sit several
+  // turns away. Re-express the end angle as the multiple of 2π nearest the
+  // current one, then rewrite just the end azimuth (rotateTo leaves the target
+  // + radius that setLookAt set). The eased rotation then sweeps ≤180° instead
+  // of possibly unwinding the long way around the ±180° seam. Only meaningful
+  // while animating — an instant cut has no visible path.
+  if (animate) {
+    const current = _controls.azimuthAngle;
+    _controls.getSpherical(_sph, true); // _sph <- pending end spherical
+    const nearest = _sph.theta + TWO_PI * Math.round((current - _sph.theta) / TWO_PI);
+    if (nearest !== _sph.theta) _controls.rotateTo(nearest, _sph.phi, true);
+  }
+
   gsap.killTweensOf(_camera);
   gsap.to(_camera, {
     fov,

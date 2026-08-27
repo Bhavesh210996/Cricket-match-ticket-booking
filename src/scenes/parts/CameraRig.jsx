@@ -67,6 +67,10 @@ export default function CameraRig() {
     <CameraControls
       ref={controls}
       makeDefault
+      // once a fly settles, fold the accumulated azimuth back into (-π, π] so it
+      // can't drift unbounded over a long session (flyTo does shortest-path off
+      // this value, so it must stay bounded). No-op visually — end == start here.
+      onRest={() => controls.current?.normalizeRotations()}
       // pov look-around + the compare grid are UI-phase work; lock input there
       enabled={orbiting}
       // Step 1 kept a zoom band + kept the camera above ground; same idea,
