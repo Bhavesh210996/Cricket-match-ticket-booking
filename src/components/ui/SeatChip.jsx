@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { useBookingStore } from '../../store/useBookingStore.js';
 import { seatPos } from '../../stadium/seats.js';
 import { projectToScreen } from '../../stadium/flyCamera.js';
+import { captureSeatPov } from '../../stadium/snapshot.js';
 import { COND, ACCENT, money } from './tokens.js';
 
 export default function SeatChip() {
@@ -14,6 +15,18 @@ export default function SeatChip() {
   const pendingSeat = useBookingStore((s) => s.pendingSeat);
   const stands = useBookingStore((s) => s.stands);
   const confirmSeat = useBookingStore((s) => s.confirmSeat);
+  const compareList = useBookingStore((s) => s.compareList);
+  const addToCompare = useBookingStore((s) => s.addToCompare);
+
+  const inList = !!pendingSeat && compareList.some((c) => c.key === pendingSeat.key);
+  const listFull = compareList.length >= 3 && !inList;
+
+  // shortlist without flying to POV: snapshot the seat's view now, keep browsing
+  const shortlist = () => {
+    if (!pendingSeat || inList || listFull) return;
+    const st = stands.find((s) => s.id === pendingSeat.standId);
+    addToCompare(pendingSeat, st ? captureSeatPov(st, pendingSeat) : null);
+  };
 
   // world point to anchor to: seat position, lifted to about backrest-top height
   const anchor = useMemo(() => {
@@ -90,6 +103,28 @@ export default function SeatChip() {
       </div>
 
       <button
+        onClick={shortlist}
+        disabled={inList || listFull}
+        style={{
+          padding: '6px 10px',
+          borderRadius: 8,
+          border: `1px solid rgba(215,255,62,${inList || listFull ? '.2' : '.45'})`,
+          background: 'rgba(215,255,62,.08)',
+          color: ACCENT,
+          fontFamily: COND,
+          fontWeight: 700,
+          fontSize: 12,
+          letterSpacing: '.08em',
+          textTransform: 'uppercase',
+          cursor: inList || listFull ? 'default' : 'pointer',
+          opacity: inList || listFull ? 0.6 : 1,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {inList ? '✓ Shortlisted' : listFull ? 'List full' : '+ Compare'}
+      </button>
+
+      <button
         onClick={confirmSeat}
         style={{
           padding: '6px 12px',
@@ -105,7 +140,7 @@ export default function SeatChip() {
           cursor: 'pointer',
         }}
       >
-        View
+        See the view
       </button>
 
       <span

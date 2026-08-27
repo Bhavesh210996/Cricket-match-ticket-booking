@@ -99,7 +99,7 @@ export default function StandHeader() {
       </div>
 
       <div style={{ fontSize: 12, color: '#8b98ac', marginTop: 10 }}>
-        Tap a seat to preview it — tap again or hit View to drop into the seat.
+        Tap a seat to preview it — tap again or hit “See the view” to drop in, or “+ Compare” to shortlist it.
       </div>
     </div>
   );

@@ -2,6 +2,9 @@
 // distance/eye-height, quality badge, Try another seat / Book this seat, and
 // add-to-compare. Reference: isPov top bar + povCardStyle card.
 import { useBookingStore } from '../../store/useBookingStore.js';
+import { primeReplayAudio } from '../../stadium/replaySound.js';
+import { captureSeatPov } from '../../stadium/snapshot.js';
+import { shareSeatCard } from './shareCard.js';
 import { COND, ACCENT, PANEL_BASE, money, qualityStyle, seatNote, iconBtn } from './tokens.js';
 
 const EYE_HEIGHT_M = 1.18; // constant from the reference design
@@ -9,14 +12,36 @@ const EYE_HEIGHT_M = 1.18; // constant from the reference design
 export default function SeatInfoCard() {
   const mode = useBookingStore((s) => s.mode);
   const seat = useBookingStore((s) => s.selectedSeat);
+  const stands = useBookingStore((s) => s.stands);
   const compareList = useBookingStore((s) => s.compareList);
   const deselectSeat = useBookingStore((s) => s.deselectSeat);
-  const enterCompare = useBookingStore((s) => s.enterCompare);
+  const addToCompare = useBookingStore((s) => s.addToCompare);
+  const openCompare = useBookingStore((s) => s.openCompare);
+  const startReplay = useBookingStore((s) => s.startReplay);
+  const replaying = useBookingStore((s) => s.replaying);
 
   if (mode !== 'pov' || !seat) return null;
 
   const short = `${seat.block} · Row ${seat.rowLabel} · Seat ${seat.num}`;
   const q = qualityStyle(seat.quality);
+  const inList = compareList.some((c) => c.key === seat.key);
+
+  // add this seat (snapshotting its POV) then open the compare screen
+  const addAndCompare = () => {
+    if (!inList) {
+      const st = stands.find((s) => s.id === seat.standId);
+      addToCompare(seat, st ? captureSeatPov(st, seat) : null);
+    }
+    openCompare();
+  };
+
+  // composite the seat's POV into a shareable PNG and hand it to the share
+  // sheet / a download. Grab a fresh snapshot if this seat has none yet.
+  const shareSeat = () => {
+    const st = stands.find((s) => s.id === seat.standId);
+    const img = seat.povImage || (st ? captureSeatPov(st, seat) : null);
+    shareSeatCard(seat, img);
+  };
 
   const book = () => {
     // no real booking flow yet
@@ -214,7 +239,56 @@ export default function SeatInfoCard() {
         </div>
 
         <button
-          onClick={enterCompare}
+          onClick={() => {
+            // resume the AudioContext inside the user gesture so the very first
+            // click makes sound (no second interaction needed)
+            primeReplayAudio();
+            startReplay();
+          }}
+          disabled={replaying}
+          style={{
+            marginTop: 10,
+            width: '100%',
+            padding: 11,
+            borderRadius: 12,
+            border: `1px solid rgba(215,255,62,${replaying ? '.2' : '.35'})`,
+            background: 'rgba(215,255,62,.08)',
+            color: ACCENT,
+            fontFamily: COND,
+            fontWeight: 700,
+            fontSize: 13.5,
+            letterSpacing: '.1em',
+            textTransform: 'uppercase',
+            cursor: replaying ? 'default' : 'pointer',
+            opacity: replaying ? 0.6 : 1,
+          }}
+        >
+          {replaying ? 'Reliving the moment…' : '▶ Relive the moment'}
+        </button>
+
+        <button
+          onClick={shareSeat}
+          style={{
+            marginTop: 8,
+            width: '100%',
+            padding: 11,
+            borderRadius: 12,
+            border: '1px solid rgba(255,255,255,.16)',
+            background: 'rgba(255,255,255,.04)',
+            color: '#eaf0f8',
+            fontFamily: COND,
+            fontWeight: 600,
+            fontSize: 13.5,
+            letterSpacing: '.1em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+          }}
+        >
+          ⤴ Share this seat
+        </button>
+
+        <button
+          onClick={addAndCompare}
           style={{
             marginTop: 8,
             width: '100%',
@@ -230,7 +304,7 @@ export default function SeatInfoCard() {
             cursor: 'pointer',
           }}
         >
-          + Add to compare ({compareList.length})
+          {inList ? `View your shortlist (${compareList.length})` : `+ Add to compare (${compareList.length})`}
         </button>
       </div>
     </>

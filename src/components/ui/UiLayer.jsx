@@ -9,6 +9,8 @@ import StandHeader from './StandHeader.jsx';
 import SeatChip from './SeatChip.jsx';
 import SeatInfoCard from './SeatInfoCard.jsx';
 import CompassIndicator from './CompassIndicator.jsx';
+import CompareTray from './CompareTray.jsx';
+import CompareScreen from './CompareScreen.jsx';
 import { BODY } from './tokens.js';
 
 export default function UiLayer() {
@@ -32,6 +34,8 @@ export default function UiLayer() {
       <SeatChip />
       <SeatInfoCard />
       <CompassIndicator />
+      <CompareTray />
+      <CompareScreen />
     </div>
   );
 }

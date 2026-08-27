@@ -10,6 +10,8 @@ import Crowd from './parts/Crowd.jsx';
 import StandSeats from './parts/StandSeats.jsx';
 import CameraRig from './parts/CameraRig.jsx';
 import PovController from './parts/PovController.jsx';
+import MomentReplay from './parts/MomentReplay.jsx';
+import SnapshotRig from './parts/SnapshotRig.jsx';
 
 export default function StadiumScene() {
   return (
@@ -28,6 +30,11 @@ export default function StadiumScene() {
       <CameraRig />
       {/* after CameraRig: overrides the (disabled) controls for seat look-around */}
       <PovController />
+      {/* after PovController: adds the "Relive the moment" ball + hit shake on
+          top of the per-frame seat lock */}
+      <MomentReplay />
+      {/* offscreen still capture for the compare shortlist */}
+      <SnapshotRig />
     </>
   );
 }

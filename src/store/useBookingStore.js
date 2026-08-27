@@ -20,6 +20,10 @@ export const useBookingStore = create((set) => ({
   selectedSeat: null,      // seatData() object — committed seat, camera has flown to POV
   compareList: [],          // up to 3 seatData() objects
 
+  // "Relive the moment": bump replayToken to (re)start the POV replay.
+  replayToken: 0,
+  replaying: false,
+
   // overview: toggle a tier highlight (matches DCLogic._selectTier)
   selectTier: (tierId) =>
     set((s) => ({ activeTier: s.activeTier === tierId ? null : tierId })),
@@ -61,17 +65,41 @@ export const useBookingStore = create((set) => ({
       mode: s.focusedStandId ? 'stand' : 'overview',
       selectedSeat: null,
       pendingSeat: null,
+      replaying: false,
     })),
 
-  // * -> compare, carrying the current seat into the shortlist (DCLogic._addCompare)
-  enterCompare: () =>
+  // "Relive the moment" — only meaningful from a seat POV. Bumping the token
+  // (re)starts the replay; MomentReplay clears `replaying` when it finishes.
+  startReplay: () =>
+    set((s) => (s.mode === 'pov' ? { replayToken: s.replayToken + 1, replaying: true } : {})),
+  endReplay: () => set({ replaying: false }),
+
+  // Add a seat to the shortlist (cap 3, dedupe by key). Does NOT change screen —
+  // the user keeps browsing other seats. `image` is the POV snapshot data URL
+  // captured at add time (see SnapshotRig / captureSeatPov).
+  addToCompare: (seat, image) =>
     set((s) => {
-      const seat = s.selectedSeat;
-      const dup = seat && s.compareList.some((c) => c.key === seat.key);
-      return {
-        mode: 'compare',
-        compareList: seat && !dup ? [...s.compareList, seat].slice(-3) : s.compareList,
-      };
+      if (!seat || s.compareList.some((c) => c.key === seat.key)) return {};
+      return { compareList: [...s.compareList, { ...seat, povImage: image || null }].slice(-3) };
+    }),
+
+  removeFromCompare: (key) =>
+    set((s) => ({ compareList: s.compareList.filter((c) => c.key !== key) })),
+
+  // floating pill -> compare screen (any time at least one seat is shortlisted)
+  openCompare: () => set({ mode: 'compare' }),
+
+  // leave the compare screen, back to wherever browsing left off
+  exitCompare: () => set((s) => ({ mode: s.focusedStandId ? 'stand' : 'overview' })),
+
+  // compare card "Revisit" -> fly the live camera back into that seat's POV
+  revisitSeat: (seat) =>
+    set({
+      mode: 'pov',
+      selectedSeat: seat,
+      focusedStandId: seat.standId,
+      pendingSeat: null,
+      replaying: false,
     }),
 
   // escape hatch back to the top of the flow
@@ -82,6 +110,7 @@ export const useBookingStore = create((set) => ({
       selectedSeat: null,
       pendingSeat: null,
       activeTier: null,
+      replaying: false,
     }),
 }));
 
