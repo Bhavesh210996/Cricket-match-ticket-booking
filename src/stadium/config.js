@@ -11,7 +11,13 @@ export const TIERS = {
 
 export const EX = 1;
 export const EZ = 1;
-export const ACCENT = 0xd7ff3e;
+// Seat-STATE palette. These are the only colours ever painted on a seat mesh —
+// tier identity is conveyed by the stand shell / awning tint, never the seat.
+// Kept mutually distinct: red / dark / lime / cyan.
+export const SEAT_AVAILABLE = 0xc9403f; // available — red, identical across every tier
+export const SEAT_SOLD = 0x2a303c;      // sold / occupied — dark charcoal
+export const ACCENT = 0xd7ff3e;         // selected (pending or committed) — lime
+export const COMPARE = 0x2ee6ff;        // shortlisted / "in compare" — cyan
 export const LETTERS = 'ABCDEFGHIJKL'.split('');
 export const SECTORS = 12;
 export const PREMIUM_SECTORS = [2, 3, 9, 10];

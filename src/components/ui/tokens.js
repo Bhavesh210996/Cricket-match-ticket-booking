@@ -5,6 +5,7 @@
 export const COND = "'Barlow Condensed', system-ui, sans-serif";
 export const BODY = "'Barlow', system-ui, sans-serif";
 export const ACCENT = '#d7ff3e';
+export const COMPARE = '#2ee6ff'; // "in compare" seat state (see config.js COMPARE)
 
 export const PANEL_BASE = {
   background: 'rgba(10,15,24,.93)',

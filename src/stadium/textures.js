@@ -78,6 +78,29 @@ export function beamTexture() {
   return new THREE.CanvasTexture(c);
 }
 
+// Small round order badge (1 / 2 / 3) floated above a shortlisted seat in the
+// stand view. Cyan ring to match the "in compare" seat state.
+export function badgeTexture(n) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d');
+  ctx.beginPath();
+  ctx.arc(32, 32, 27, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(9,18,28,0.92)';
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#2ee6ff';
+  ctx.stroke();
+  ctx.fillStyle = '#e4fbff';
+  ctx.font = 'bold 40px Barlow Condensed, Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(String(n), 32, 36);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 export function labelSprite(text) {
   const c = document.createElement('canvas');
   c.width = 128; c.height = 128;

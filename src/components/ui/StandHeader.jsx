@@ -3,8 +3,8 @@
 import { useBookingStore } from '../../store/useBookingStore.js';
 import { standPose } from '../../stadium/camera.js';
 import { flyTo, viewportAspect, hasCamera } from '../../stadium/flyCamera.js';
-import { TIERS } from '../../stadium/config.js';
-import { COND, ACCENT, hex, iconBtn } from './tokens.js';
+import { TIERS, SEAT_AVAILABLE, SEAT_SOLD } from '../../stadium/config.js';
+import { COND, ACCENT, COMPARE, hex, iconBtn } from './tokens.js';
 
 const legendPill = {
   display: 'flex',
@@ -79,16 +79,20 @@ export default function StandHeader() {
         }}
       >
         <span style={legendPill}>
-          <span style={dot(hex(tier.color))} />
+          <span style={dot(hex(SEAT_AVAILABLE))} />
           Available
         </span>
         <span style={legendPill}>
-          <span style={dot('#2a303c')} />
+          <span style={dot(hex(SEAT_SOLD))} />
           Sold
         </span>
         <span style={legendPill}>
           <span style={dot(ACCENT)} />
           Selected
+        </span>
+        <span style={legendPill}>
+          <span style={{ ...dot(COMPARE), boxShadow: `0 0 6px ${COMPARE}` }} />
+          Shortlisted
         </span>
         <button
           onClick={resetZoom}
