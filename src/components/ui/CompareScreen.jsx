@@ -6,6 +6,7 @@
 import { useBookingStore } from '../../store/useBookingStore.js';
 import { captureSeatPov } from '../../stadium/snapshot.js';
 import { shareSeatCard } from './shareCard.js';
+import { useViewport } from './useViewport.js';
 import { COND, ACCENT, PANEL_BASE, money, qualityStyle, iconBtn } from './tokens.js';
 
 const EYE_HEIGHT_M = 1.18;
@@ -17,6 +18,7 @@ export default function CompareScreen() {
   const exitCompare = useBookingStore((s) => s.exitCompare);
   const removeFromCompare = useBookingStore((s) => s.removeFromCompare);
   const revisitSeat = useBookingStore((s) => s.revisitSeat);
+  const vp = useViewport();
 
   if (mode !== 'compare') return null;
 
@@ -49,11 +51,18 @@ export default function CompareScreen() {
         overflow: 'auto',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px 8px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: vp.isPhone ? '12px 14px 6px' : '16px 20px 8px',
+        }}
+      >
         <button style={iconBtn} onClick={exitCompare} aria-label="Back">
           ‹
         </button>
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div
             style={{
               fontFamily: COND,
@@ -69,7 +78,7 @@ export default function CompareScreen() {
             style={{
               fontFamily: COND,
               fontWeight: 700,
-              fontSize: 24,
+              fontSize: 'clamp(18px, 5vw, 24px)',
               letterSpacing: '.03em',
               textTransform: 'uppercase',
               lineHeight: 1.05,
@@ -78,7 +87,14 @@ export default function CompareScreen() {
             Compare Your Shortlist
           </div>
         </div>
-        <div style={{ marginLeft: 'auto', fontSize: 12, color: '#93a1b6', whiteSpace: 'nowrap' }}>
+        <div
+          style={{
+            flexShrink: 0,
+            fontSize: 12,
+            color: '#93a1b6',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {compareList.length} of 3 seats
         </div>
       </div>
@@ -137,7 +153,7 @@ export default function CompareScreen() {
                 key={seat.key}
                 style={{
                   width: 320,
-                  maxWidth: 'calc(100vw - 40px)',
+                  maxWidth: `calc(100vw - ${vp.isPhone ? 24 : 40}px)`,
                   borderRadius: 18,
                   overflow: 'hidden',
                   display: 'flex',
@@ -149,7 +165,9 @@ export default function CompareScreen() {
                 <div
                   style={{
                     position: 'relative',
-                    aspectRatio: '16 / 10',
+                    // flatter image on a landscape phone so the card isn't taller
+                    // than the screen
+                    aspectRatio: vp.isShort ? '16 / 7' : '16 / 10',
                     background: '#0a0e16',
                   }}
                 >
@@ -184,13 +202,13 @@ export default function CompareScreen() {
                       position: 'absolute',
                       top: 8,
                       right: 8,
-                      width: 28,
-                      height: 28,
-                      borderRadius: 8,
+                      width: 32,
+                      height: 32,
+                      borderRadius: 9,
                       border: '1px solid rgba(255,255,255,.18)',
                       background: 'rgba(6,8,13,.72)',
                       color: '#eaf0f8',
-                      fontSize: 14,
+                      fontSize: 15,
                       lineHeight: 1,
                       cursor: 'pointer',
                     }}

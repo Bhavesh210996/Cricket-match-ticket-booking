@@ -12,6 +12,7 @@ import { captureSeatPov } from '../../stadium/snapshot.js';
 import { seatSunTimeline, parseMatchStart, formatHour } from '../../stadium/sun.js';
 import { shareSeatCard } from './shareCard.js';
 import { MATCH } from './mockData.js';
+import { useViewport } from './useViewport.js';
 import { COND, ACCENT, PANEL_BASE, money, qualityStyle, seatNote, iconBtn } from './tokens.js';
 
 // per-band tint for the sun-exposure summary
@@ -53,15 +54,19 @@ export default function SeatInfoCard() {
   const openCompare = useBookingStore((s) => s.openCompare);
   const startReplay = useBookingStore((s) => s.startReplay);
   const replaying = useBookingStore((s) => s.replaying);
+  const vp = useViewport();
 
-  const [expanded, setExpanded] = useState(true);
+  // Opens expanded, except on a landscape phone where there's no vertical room —
+  // there it opens collapsed so the seat view stays visible.
+  const openExpanded = !vp.isShort;
+  const [expanded, setExpanded] = useState(openExpanded);
 
-  // open expanded; re-expand whenever the selected seat changes (render-phase
-  // reset on a changed key — no effect, no cascading render)
+  // re-apply the default whenever the selected seat changes (render-phase reset
+  // on a changed key — no effect, no cascading render)
   const [lastKey, setLastKey] = useState(seat?.key);
   if (seat?.key !== lastKey) {
     setLastKey(seat?.key);
-    setExpanded(true);
+    setExpanded(openExpanded);
   }
 
   if (mode !== 'pov' || !seat) return null;
@@ -110,7 +115,7 @@ export default function SeatInfoCard() {
           top: 0,
           left: 0,
           right: 0,
-          padding: '14px 16px 26px',
+          padding: vp.isShort ? '8px 12px 14px' : '14px 16px 26px',
           background: 'linear-gradient(180deg, rgba(5,8,14,.85) 0%, rgba(5,8,14,0) 100%)',
           display: 'flex',
           alignItems: 'center',
@@ -138,7 +143,7 @@ export default function SeatInfoCard() {
             style={{
               fontFamily: COND,
               fontWeight: 700,
-              fontSize: 19,
+              fontSize: vp.isPhone ? 16 : 19,
               letterSpacing: '.04em',
               textTransform: 'uppercase',
               lineHeight: 1.05,
@@ -147,31 +152,35 @@ export default function SeatInfoCard() {
             {short}
           </div>
         </div>
-        <span
-          style={{
-            padding: '6px 10px',
-            borderRadius: 9,
-            background: 'rgba(6,8,13,.7)',
-            border: '1px solid rgba(255,255,255,.12)',
-            fontSize: 10.5,
-            letterSpacing: '.12em',
-            textTransform: 'uppercase',
-            color: '#c3cddc',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Drag to look
-        </span>
+        {!vp.isShort && (
+          <span
+            style={{
+              padding: '6px 10px',
+              borderRadius: 9,
+              background: 'rgba(6,8,13,.7)',
+              border: '1px solid rgba(255,255,255,.12)',
+              fontSize: 10.5,
+              letterSpacing: '.12em',
+              textTransform: 'uppercase',
+              color: '#c3cddc',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
+            Drag to look
+          </span>
+        )}
       </div>
 
-      {/* bottom panel — collapsed slim bar by default, expands upward on tap */}
+      {/* bottom panel — slim bar + upward-expanding detail */}
       <div
         style={{
           position: 'absolute',
-          left: 24,
-          bottom: 24,
-          width: 430,
-          maxWidth: 'calc(100vw - 48px)',
+          left: vp.isPhone ? 12 : 24,
+          right: vp.isPhone ? 12 : 'auto',
+          bottom: vp.isShort ? 10 : vp.isPhone ? 14 : 24,
+          width: vp.isPhone ? 'auto' : 430,
+          maxWidth: vp.isPhone ? 'none' : 'calc(100vw - 48px)',
           padding: 16,
           borderRadius: 20,
           pointerEvents: 'auto',
@@ -310,9 +319,11 @@ export default function SeatInfoCard() {
                 paddingTop: 14,
                 marginTop: 14,
                 borderTop: '1px solid rgba(255,255,255,.09)',
-                // safety on short viewports / long sun timelines
-                maxHeight: 'calc(100vh - 150px)',
+                // cap so the expanded card can't exceed the viewport; inner
+                // content scrolls. Tighter reserve on short / phone screens.
+                maxHeight: `calc(100dvh - ${vp.isShort ? 84 : vp.isPhone ? 116 : 150}px)`,
                 overflowY: 'auto',
+                overscrollBehavior: 'contain',
               }}
             >
               {note && (

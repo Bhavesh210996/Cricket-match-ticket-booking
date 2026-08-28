@@ -14,8 +14,15 @@
 // animation's bat-contact event rather than to wall-clock timers.
 
 // --- asset config: set to a URL to replace the synthesized placeholder ---
-const BAT_HIT_SRC = null; // e.g. new URL('../assets/bat-hit.mp3', import.meta.url).href
-const CROWD_ROAR_SRC = null; // e.g. new URL('../assets/crowd-roar.mp3', import.meta.url).href
+// Real licensed clips live in src/assets/ and are resolved through Vite so they
+// get hashed/bundled. Set either back to null to fall back to the synth render.
+const BAT_HIT_SRC = new URL('../assets/bat-hit.mp3', import.meta.url).href;
+const CROWD_ROAR_SRC = new URL('../assets/crowd-roar.mp3', import.meta.url).href;
+
+// Per-clip playback gain. Tweak here if a replacement file sits louder/quieter
+// than the old synth placeholder — playback wiring and timing stay untouched.
+const BAT_HIT_GAIN = 0.9;
+const CROWD_ROAR_GAIN = 0.85;
 
 const AC = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
 const OAC =
@@ -30,10 +37,19 @@ function ctx() {
 let _batHit = null; // Promise<AudioBuffer>
 let _crowd = null; // Promise<AudioBuffer>
 
-function decodeUrl(src) {
+// Decode a file to an AudioBuffer. If the fetch/decode fails (missing file,
+// bad encoding) fall back to the synth render so the replay is never silent.
+function decodeUrl(src, fallback) {
   return fetch(src)
-    .then((r) => r.arrayBuffer())
-    .then((buf) => ctx().decodeAudioData(buf));
+    .then((r) => {
+      if (!r.ok) throw new Error(`audio ${r.status} ${src}`);
+      return r.arrayBuffer();
+    })
+    .then((buf) => ctx().decodeAudioData(buf))
+    .catch((err) => {
+      console.warn('[replaySound] falling back to synth:', err);
+      return fallback();
+    });
 }
 
 // Call from a user gesture (the "Relive the moment" click). Resumes the context
@@ -43,8 +59,9 @@ export function primeReplayAudio() {
   const c = ctx();
   if (!c) return;
   if (c.state === 'suspended') c.resume();
-  if (!_batHit) _batHit = BAT_HIT_SRC ? decodeUrl(BAT_HIT_SRC) : renderBatHit();
-  if (!_crowd) _crowd = CROWD_ROAR_SRC ? decodeUrl(CROWD_ROAR_SRC) : renderCrowdRoar();
+  if (!_batHit) _batHit = BAT_HIT_SRC ? decodeUrl(BAT_HIT_SRC, renderBatHit) : renderBatHit();
+  if (!_crowd)
+    _crowd = CROWD_ROAR_SRC ? decodeUrl(CROWD_ROAR_SRC, renderCrowdRoar) : renderCrowdRoar();
 }
 
 // Play a buffer through its own gain node. Returns a handle the caller can fade.
@@ -73,7 +90,7 @@ function playBuffer(bufferPromise, { gain = 1, delay = 0 } = {}) {
 // camera FOV punch).
 export function playBatHit() {
   primeReplayAudio();
-  return playBuffer(_batHit, { gain: 0.9 });
+  return playBuffer(_batHit, { gain: BAT_HIT_GAIN });
 }
 
 // Swelling crowd roar: started a short beat after the hit. The buffer already
@@ -81,7 +98,7 @@ export function playBatHit() {
 // replay ends.
 export function playCrowdRoar(delay = 0.15) {
   primeReplayAudio();
-  return playBuffer(_crowd, { gain: 0.85, delay });
+  return playBuffer(_crowd, { gain: CROWD_ROAR_GAIN, delay });
 }
 
 export function fadeOutCrowd(handle, seconds = 1.2) {

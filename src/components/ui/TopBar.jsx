@@ -3,6 +3,7 @@
 // `Cricket Seat Preview.dc.html`.
 import { useBookingStore } from '../../store/useBookingStore.js';
 import { useTierConfig } from './useTierConfig.js';
+import { useViewport } from './useViewport.js';
 import { MATCH } from './mockData.js';
 import { COND, ACCENT, iconBtn } from './tokens.js';
 
@@ -10,6 +11,7 @@ export default function TopBar() {
   const mode = useBookingStore((s) => s.mode);
   const backToOverview = useBookingStore((s) => s.backToOverview);
   const tiers = useTierConfig();
+  const vp = useViewport();
 
   if (mode !== 'overview') return null;
 
@@ -35,7 +37,7 @@ export default function TopBar() {
       </button>
 
       {/* pill is taken out of flow so it can't squeeze the title on a phone */}
-      <div style={{ flex: 1, minWidth: 0, paddingRight: 96 }}>
+      <div style={{ flex: 1, minWidth: 0, paddingRight: vp.isPhone ? 82 : 104 }}>
         <div
           style={{
             fontFamily: COND,
@@ -51,9 +53,8 @@ export default function TopBar() {
           style={{
             fontFamily: COND,
             fontWeight: 700,
-            // 24px on desktop; scales down on narrow phones so it wraps to at
-            // most two lines instead of three
-            fontSize: 'clamp(19px, 5.4vw, 24px)',
+            // 24px on desktop; scales down on narrow phones
+            fontSize: 'clamp(18px, 5.2vw, 24px)',
             lineHeight: 1.05,
             letterSpacing: '.01em',
           }}

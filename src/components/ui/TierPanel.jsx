@@ -3,6 +3,7 @@
 // sheet (desktop sheetStyle: left:20px).
 import { useBookingStore } from '../../store/useBookingStore.js';
 import { useTierConfig } from './useTierConfig.js';
+import { useViewport } from './useViewport.js';
 import { COND, ACCENT, PANEL_BASE, money } from './tokens.js';
 
 export default function TierPanel() {
@@ -11,20 +12,29 @@ export default function TierPanel() {
   const selectTier = useBookingStore((s) => s.selectTier);
   const selectStand = useBookingStore((s) => s.selectStand);
   const tiers = useTierConfig();
+  const vp = useViewport();
 
   if (mode !== 'overview') return null;
 
   const active = tiers.find((t) => t.id === activeTier);
   const bestBlock = active ? active.blocks[Math.floor(active.blocks.length / 2)] : null;
 
+  // sits below the overview top chrome; that stack is taller on a phone (wrapped
+  // title) and the whole screen is shorter, so drop the top offset and let the
+  // panel scroll internally instead of running off the bottom edge
+  const top = vp.isShort ? 84 : vp.isPhone ? 176 : 238;
+
   return (
     <div
       style={{
         position: 'absolute',
-        left: 20,
-        top: 238,
+        left: vp.isPhone ? 12 : 20,
+        top,
         width: 372,
-        maxWidth: 'calc(100vw - 40px)',
+        maxWidth: `calc(100vw - ${vp.isPhone ? 24 : 40}px)`,
+        maxHeight: `calc(100dvh - ${top + 20}px)`,
+        overflowY: 'auto',
+        overscrollBehavior: 'contain',
         padding: 18,
         borderRadius: 20,
         pointerEvents: 'auto',

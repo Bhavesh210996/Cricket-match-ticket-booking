@@ -81,6 +81,16 @@ function StandSeatLayer({ st, focused }) {
     return parts.join('|');
   });
 
+  // key of the seat the camera is POV'd into, if it's in this stand. The glow
+  // shell is an additive box ~1.2u across; with the eye sitting inside it that
+  // one shell washes the whole frame bright, so it's skipped for the POV seat
+  // (the badge/outline is pointless from inside the seat anyway).
+  const povSeatKey = useBookingStore((s) => {
+    if (s.mode !== 'pov' && s.mode !== 'compare') return null;
+    const m = s.selectedSeat;
+    return m && m.standId === st.id ? `${m.row - 1}-${m.num - 1}` : null;
+  });
+
   const compareMap = useMemo(() => {
     const m = new Map();
     if (compareSig)
@@ -120,14 +130,16 @@ function StandSeatLayer({ st, focused }) {
     const mats = [];
     const orders = [];
     build.index.forEach((s, i) => {
-      const order = compareMap.get(`${s.row}-${s.col}`);
+      const rc = `${s.row}-${s.col}`;
+      if (rc === povSeatKey) return; // skip the seat wrapped around the camera
+      const order = compareMap.get(rc);
       if (order != null) {
         mats.push(build.mats[i]);
         orders.push(order);
       }
     });
     return { mats, orders };
-  }, [build, compareMap]);
+  }, [build, compareMap, povSeatKey]);
 
   const panRef = useRef();
   const backRef = useRef();

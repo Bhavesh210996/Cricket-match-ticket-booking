@@ -110,7 +110,11 @@ function BeamCones() {
     for (let i = 0; i < pos.count; i++) {
       // local +Y end is the source; tLen = 0 at source, 1 at the pitch tip
       const tLen = (half - pos.getY(i)) / BEAM_LEN;
-      const alpha = Math.pow(1 - tLen, 1.7);
+      // ease the hard bright disc right at the fixture: fade the alpha back
+      // down over the first ~15% of the length so the beam glows out of the
+      // light rather than starting as a solid hot blob.
+      const near = Math.min(1, tLen / 0.15);
+      const alpha = Math.pow(1 - tLen, 1.7) * (0.35 + 0.65 * near);
       col[i * 4 + 0] = 1;
       col[i * 4 + 1] = 1;
       col[i * 4 + 2] = 1;
@@ -150,7 +154,7 @@ function BeamCones() {
             color={0xfff2d6}
             vertexColors
             transparent
-            opacity={0.6}
+            opacity={0.45}
             blending={THREE.AdditiveBlending}
             depthWrite={false}
             side={THREE.DoubleSide}

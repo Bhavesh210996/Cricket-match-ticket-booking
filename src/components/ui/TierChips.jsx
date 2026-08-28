@@ -2,6 +2,7 @@
 // Reference: the tier chip row inside the isOverview block.
 import { useBookingStore } from '../../store/useBookingStore.js';
 import { useTierConfig } from './useTierConfig.js';
+import { useViewport } from './useViewport.js';
 import { COND } from './tokens.js';
 
 export default function TierChips() {
@@ -9,6 +10,7 @@ export default function TierChips() {
   const activeTier = useBookingStore((s) => s.activeTier);
   const selectTier = useBookingStore((s) => s.selectTier);
   const tiers = useTierConfig();
+  const vp = useViewport();
 
   if (mode !== 'overview') return null;
 
@@ -37,7 +39,7 @@ export default function TierChips() {
               alignItems: 'center',
               gap: 6,
               flexShrink: 0,
-              padding: '6px 10px',
+              padding: vp.isPhone ? '9px 12px' : '6px 10px',
               borderRadius: 9,
               cursor: 'pointer',
               fontFamily: COND,

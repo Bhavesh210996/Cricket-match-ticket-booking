@@ -4,12 +4,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBookingStore } from '../../store/useBookingStore.js';
 import { getCameraAngles } from '../../stadium/flyCamera.js';
+import { useViewport } from './useViewport.js';
 import { COND, ACCENT } from './tokens.js';
 
 const DEG = 180 / Math.PI;
 
 export default function CompassIndicator() {
   const mode = useBookingStore((s) => s.mode);
+  const vp = useViewport();
   const [angles, setAngles] = useState({ azimuth: 0, polar: Math.PI / 4 });
   const last = useRef(angles);
 
@@ -36,15 +38,17 @@ export default function CompassIndicator() {
   if (!visible) return null;
 
   const tiltDeg = Math.max(0, Math.round(90 - angles.polar * DEG)); // elevation above horizon
+  const size = vp.isPhone || vp.isShort ? 72 : 94;
+  const edge = vp.isPhone || vp.isShort ? 12 : 20;
 
   return (
     <div
       style={{
         position: 'absolute',
-        right: 20,
-        bottom: 20,
-        width: 94,
-        height: 94,
+        right: edge,
+        bottom: edge,
+        width: size,
+        height: size,
         pointerEvents: 'none',
       }}
     >

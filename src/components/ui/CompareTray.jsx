@@ -9,7 +9,9 @@ export default function CompareTray() {
   const compareList = useBookingStore((s) => s.compareList);
   const openCompare = useBookingStore((s) => s.openCompare);
 
-  if (mode === 'compare' || compareList.length === 0) return null;
+  // hidden on the compare screen itself, and in POV where the seat card already
+  // carries a shortlist action and this bottom-centre pill would overlap it
+  if (mode === 'compare' || mode === 'pov' || compareList.length === 0) return null;
   const n = compareList.length;
 
   return (

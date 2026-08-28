@@ -8,6 +8,7 @@ import { useBookingStore } from '../../store/useBookingStore.js';
 import { seatPos } from '../../stadium/seats.js';
 import { projectToScreen } from '../../stadium/flyCamera.js';
 import { captureSeatPov } from '../../stadium/snapshot.js';
+import { useViewport } from './useViewport.js';
 import { COND, ACCENT, money } from './tokens.js';
 
 export default function SeatChip() {
@@ -17,6 +18,7 @@ export default function SeatChip() {
   const confirmSeat = useBookingStore((s) => s.confirmSeat);
   const compareList = useBookingStore((s) => s.compareList);
   const addToCompare = useBookingStore((s) => s.addToCompare);
+  const vp = useViewport();
 
   const inList = !!pendingSeat && compareList.some((c) => c.key === pendingSeat.key);
   const listFull = compareList.length >= 3 && !inList;
@@ -63,17 +65,25 @@ export default function SeatChip() {
 
   if (mode !== 'stand' || !pendingSeat || !anchor || !pos) return null;
 
+  // keep the chip (and its action buttons) on-screen when the seat projects
+  // near a viewport edge — critical on phones where it would otherwise be
+  // half-clipped with unreachable buttons.
+  const half = vp.isPhone ? 150 : 78;
+  const cx = Math.min(Math.max(pos.x, half + 8), vp.w - half - 8);
+  const cy = Math.max(pos.y, vp.isShort ? 64 : 96);
+
   return (
     <div
       style={{
         position: 'absolute',
-        left: pos.x,
-        top: pos.y,
+        left: cx,
+        top: cy,
         transform: 'translate(-50%, calc(-100% - 12px))',
         pointerEvents: 'auto',
         display: 'flex',
         alignItems: 'center',
         gap: 10,
+        maxWidth: 'calc(100vw - 20px)',
         padding: '8px 10px',
         borderRadius: 12,
         background: 'rgba(6,8,13,.92)',

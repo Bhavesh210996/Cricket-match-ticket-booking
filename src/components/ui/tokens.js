@@ -47,11 +47,13 @@ export function seatNote(seat) {
   return 'Clear sightline over the pitch, full square visible';
 }
 
-// round 34px icon button (close / back), from the template
+// round icon button (close / back), from the template. 38px keeps it a
+// comfortable touch target on phones while still reading as a small control on
+// desktop.
 export const iconBtn = {
-  width: 34,
-  height: 34,
-  flex: '0 0 34px',
+  width: 38,
+  height: 38,
+  flex: '0 0 38px',
   borderRadius: 10,
   border: '1px solid rgba(255,255,255,.14)',
   background: 'rgba(14,20,31,.8)',

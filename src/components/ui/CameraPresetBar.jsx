@@ -4,6 +4,7 @@
 import { useBookingStore } from '../../store/useBookingStore.js';
 import { presetPose, overviewPose } from '../../stadium/camera.js';
 import { flyTo, viewportAspect, hasCamera } from '../../stadium/flyCamera.js';
+import { useViewport } from './useViewport.js';
 import { COND } from './tokens.js';
 
 const PRESETS = [
@@ -32,8 +33,11 @@ const presetBtn = {
 export default function CameraPresetBar() {
   const mode = useBookingStore((s) => s.mode);
   const stands = useBookingStore((s) => s.stands);
+  const vp = useViewport();
 
   if (mode !== 'overview') return null;
+
+  const btn = vp.isPhone ? { ...presetBtn, padding: '9px 11px' } : presetBtn;
 
   const go = (id) => {
     if (!hasCamera()) return;
@@ -68,14 +72,14 @@ export default function CameraPresetBar() {
         Camera
       </span>
       {PRESETS.map(([label, id]) => (
-        <button key={id} onClick={() => go(id)} style={presetBtn}>
+        <button key={id} onClick={() => go(id)} style={btn}>
           {label}
         </button>
       ))}
       <button
         onClick={reset}
         style={{
-          ...presetBtn,
+          ...btn,
           background: 'transparent',
           borderColor: 'rgba(255,255,255,.1)',
           color: '#7d8ba1',
